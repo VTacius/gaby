@@ -45,10 +45,12 @@ func TestEncontrarEnlaceListaHistorial(t *testing.T){
 </BODY>
 </HTML>
 `
-    lector := http.Response {
+    lector := &http.Response {
         Body: io.NopCloser(strings.NewReader(contenido)),
     }
+    
     requerido := "XAAAAAAKOCBBALog11.html"
+    
     if respuesta := EncontrarEnlaceListaHistorial(lector); respuesta != requerido {
         t.Fatalf("contenido: %s requerido: %s", contenido, requerido)
     }

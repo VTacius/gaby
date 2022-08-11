@@ -77,9 +77,10 @@ func testTomarDatosUltimaFila (t *testing.T) {
 </HTML>
 
     `
-    lector := http.Response {
+    lector := &http.Response {
         Body: io.NopCloser(strings.NewReader(contenido)),
     }
+    
     requerido := []string{"08/10/2022", "09:03:00", "21.5", "25.9", "47.3", "36.3"}
 
     if respuesta := TomarDatosUltimaFila(lector); respuesta[2] == requerido[2] {
