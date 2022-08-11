@@ -45,7 +45,7 @@ jobs:
         go-version: 1.18
 
     - name: Corriendo test
-      run: go test -v 
+      run: go test -v ./...
 
     - name: Nombre de repositorio para nombre de aplicación
       id: nombre

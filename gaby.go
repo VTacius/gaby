@@ -4,7 +4,6 @@ import (
     "os"
     "fmt"
     "time"
-
     "sanidad/alortiz/gaby/peticiones"
     "sanidad/alortiz/gaby/utils"
 )
@@ -17,10 +16,16 @@ func main() {
     zonaHoraria := "America/El_Salvador"
     timeLayout := "01/02/2006 15:04:05"
     ficheroTemporal := "/var/lib/gaby"
+
+    hostname := "10.0.0.9"
    
     URL_ORIGEN_DATOS := os.Getenv("URL_ORIGEN_DATOS")
     URI_HISTORIAL := "PageHislog.html"
-    
+    Endpoint := os.Getenv("GABY_ENDPOINT")
+    Token := os.Getenv("GABY_TOKEN")
+    Organization := "sanidad"
+    Bucket := "ambientales"
+   
     enlaceDatos, err := peticiones.ObtenerEnlaceHistorial(URL_ORIGEN_DATOS, URI_HISTORIAL)
     if err != nil {
         fmt.Println(err)
@@ -34,15 +39,14 @@ func main() {
         return
     }
     
-    fmt.Println(resultado)
-
-    Fecha := resultado[0] 
-    Hora :=  resultado[1]
-    datos := utils.Datos{Fecha, Hora}
+    datos := utils.NewDatos(resultado)
+    config := utils.Configuracion{Endpoint, Token, Organization, Bucket}
     
     horaActual := utils.ParsearHora(zonaHoraria, timeLayout, datos) 
     horaAnterior := utils.LeerFechaEnArchivo(ficheroTemporal)
-   
+    
+    utils.EnviarDatos(config, datos, hostname)
+       
     for i := 0; i < 10; i++ {
         if horaActual.UnixMilli() >  horaAnterior {
             utils.GuardarFechaEnArchivo(ficheroTemporal, horaActual)
