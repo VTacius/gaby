@@ -2,10 +2,15 @@
 Scrapper de los datos de sensores EATON
 
 ## Construcción
+La construcción del binario debe hacerse en un sistema independiente al servidor en producción. Un servidor en producción no debería tener herramientas para compilación de paquetes.
 Pues contrario a la publicidad, Go no es tan independiente como dice ser. Si no se puede usar un sistema igual (O compatible) al destino, pues podría usarse podman (o docker) para que funcione
 ```bash
 podman run  -it  --rm -v "$PWD":/go/src/myapp -w /go/src/myapp golang:1.18-bullseye go build .
 ```
+
+## Instalación
+El binario se envía al servidor destino. SCP bastaría
+scp gaby root@servidor:/usr/local/sbin
 
 ## Configuracion
 ```bash
