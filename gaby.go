@@ -23,8 +23,8 @@ func main() {
     URI_HISTORIAL := "PageHislog.html"
     Endpoint := os.Getenv("GABY_ENDPOINT")
     Token := os.Getenv("GABY_TOKEN")
-    Organization := "sanidad"
-    Bucket := "ambientales"
+    Organization := os.Getenv("GABY_ORGANIZACION")
+    Bucket := os.Getenv("GABY_BUCKET")
    
     enlaceDatos, err := peticiones.ObtenerEnlaceHistorial(URL_ORIGEN_DATOS, URI_HISTORIAL)
     if err != nil {

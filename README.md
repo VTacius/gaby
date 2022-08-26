@@ -14,6 +14,8 @@ echo 1600000000000 > /var/lib/gaby
 
 # Configurar las siguientes variables del sistema
 URL_ORIGEN_DATOS=http://user:pass@10.0.0.9
+GABY_ORGANIZACION="sanidad"
+GABY_BUCKET="ambientales"
 export GABY_ENDPOINT="http://stats.dominio.com"
 export GABY_TOKEN="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 export URL_ORIGEN_DATOS="http://user:password@10.0.0.97"
