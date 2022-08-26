@@ -38,12 +38,13 @@ func ObtenerEnlaceHistorial(endpoint string, uri string) (string, error){
     url := fmt.Sprintf("%s/%s", endpoint, uri)
     respuesta, err := http.Get(url)
 
-    defer respuesta.Body.Close()
-
     if err != nil {
+        fmt.Println(err)
         return "", err
     }
     
+    defer respuesta.Body.Close()
+
     resultado := EncontrarEnlaceListaHistorial(respuesta)
     
     return resultado, nil

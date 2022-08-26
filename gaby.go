@@ -40,6 +40,7 @@ func main() {
     }
     
     datos := utils.NewDatos(resultado)
+    fmt.Println(resultado)
     config := utils.Configuracion{Endpoint, Token, Organization, Bucket}
     
     horaActual := utils.ParsearHora(zonaHoraria, timeLayout, datos) 

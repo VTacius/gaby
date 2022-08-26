@@ -1,6 +1,7 @@
 package utils
 
 import (
+    "fmt"
     "time"
     "context"
     "strconv" 
@@ -23,7 +24,7 @@ type Datos struct {
 
 func conversor(lista []string, indice int) float64 {
     if len(lista) -1 >= indice {
-        if resultado, err := strconv.ParseFloat(lista[2], 64); err == nil {
+        if resultado, err := strconv.ParseFloat(lista[indice], 64); err == nil {
             return resultado
         }
         return 2.0
@@ -67,7 +68,9 @@ func EnviarDatos(config Configuracion, datos Datos, hostname string) {
         AddField("hum2", datos.Humedad[1]).
         SetTime(time.Now().Round(time.Second * 60))
     
-    writeAPI.WritePoint(context.Background(), temperatura)
+        err:= writeAPI.WritePoint(context.Background(), temperatura)
+
+        fmt.Println(err)
     writeAPI.WritePoint(context.Background(), humedad)
     
 }
