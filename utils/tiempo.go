@@ -21,13 +21,14 @@ func GuardarFechaEnArchivo(ruta string, ts time.Time){
     redondo := ts.Round(time.Second * 60)
     datos := []byte(fmt.Sprintf("%d", redondo.UnixMilli()))
     err := os.WriteFile(ruta, datos, 0700)
+    // TODO: De verdad necesitas manejar mejor el comportamiento frente a este error
     if err != nil {
         fmt.Println(err)
     }
 }
 
 func LeerFechaEnArchivo(ruta string) (int64) {
-    
+    // TODO: ¡El manejo de errores! 
     datos, _ := os.ReadFile(ruta)
     contenido := strings.Trim(string(datos), "\n")
     entero, _ := strconv.ParseInt(contenido, 10, 64)

@@ -2,6 +2,7 @@ package peticiones
 
 import (
     "fmt"
+    "errors"
     "net/http"
     "golang.org/x/net/html"
 ) 
@@ -31,7 +32,7 @@ func EncontrarEnlaceListaHistorial(contenido *http.Response) (string) {
         }
     }
     
-    return ""
+    return "" 
 }
    
 func ObtenerEnlaceHistorial(endpoint string, uri string) (string, error){
@@ -39,14 +40,21 @@ func ObtenerEnlaceHistorial(endpoint string, uri string) (string, error){
     respuesta, err := http.Get(url)
 
     if err != nil {
-        fmt.Println(err)
         return "", err
     }
     
     defer respuesta.Body.Close()
+    
+    if respuesta.StatusCode != 200 {
+        mensaje := fmt.Sprintf("%s devuelve %d: %s", endpoint, respuesta.StatusCode, http.StatusText(respuesta.StatusCode))
+        return "", errors.New(mensaje)
+    }
 
     resultado := EncontrarEnlaceListaHistorial(respuesta)
+    if resultado == "" {
+        mensaje := fmt.Sprintf("No se encontró el contenido adecuado en la página %s. \nRevise que se esté apuntando al dispositivo adecuado", url)
+        return "", errors.New(mensaje)
+    }
     
     return resultado, nil
-
 }

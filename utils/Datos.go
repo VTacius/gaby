@@ -1,7 +1,6 @@
 package utils
 
 import (
-    "fmt"
     "time"
     "context"
     "strconv" 
@@ -49,10 +48,11 @@ func NewDatos(resultado []string) Datos {
     return datos
 }
 
-func EnviarDatos(config Configuracion, datos Datos, hostname string) {
+func EnviarDatos(config Configuracion, datos Datos, hostname string) error {
 
     client := influxdb2.NewClient(config.Endpoint, config.Token)
     defer client.Close()
+    
     writeAPI := client.WriteAPIBlocking(config.Organization, config.Bucket)
 
     // Create point using fluent style
@@ -68,9 +68,11 @@ func EnviarDatos(config Configuracion, datos Datos, hostname string) {
         AddField("hum2", datos.Humedad[1]).
         SetTime(time.Now().Round(time.Second * 60))
     
-        err:= writeAPI.WritePoint(context.Background(), temperatura)
-
-        fmt.Println(err)
-    writeAPI.WritePoint(context.Background(), humedad)
+    err := writeAPI.WritePoint(context.Background(), temperatura)
+    if err != nil {
+        return err
+    } 
     
+    err = writeAPI.WritePoint(context.Background(), humedad)
+    return err 
 }

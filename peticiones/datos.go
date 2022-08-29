@@ -2,6 +2,7 @@ package peticiones
 
 import (
     "fmt"
+    "errors"
     "net/http"
     "golang.org/x/net/html"
 ) 
@@ -34,15 +35,23 @@ func TomarDatosUltimaFila(contenido *http.Response) ([]string) {
 func ObtenerDatosAmbientales(endpoint string, uri string) ([]string, error){
     url := fmt.Sprintf("%s/%s", endpoint, uri)
     respuesta, err := http.Get(url)
-
-    defer respuesta.Body.Close()
-
+    
     if err != nil {
         return []string{}, err
     }
+
+    defer respuesta.Body.Close()
     
+    if respuesta.StatusCode != 200 {
+        mensaje := fmt.Sprintf("%s devuelve %d: %s", endpoint, respuesta.StatusCode, http.StatusText(respuesta.StatusCode))
+        return []string{}, errors.New(mensaje)
+    }
+
     resultado := TomarDatosUltimaFila(respuesta)
+    if len(resultado) == 0 {
+        mensaje := fmt.Sprintf("No se encontró el contenido adecuado en la página %s. \nRevise que se esté apuntando al dispositivo adecuado", url)
+        return []string{}, errors.New(mensaje)
+    }
     
     return resultado, nil
-
 }

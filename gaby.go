@@ -6,54 +6,99 @@ import (
     "time"
     "sanidad/alortiz/gaby/peticiones"
     "sanidad/alortiz/gaby/utils"
+    "github.com/jaffee/commandeer"
 )
+
+type Gaby struct {
+    Envio bool `help:"Hace el envío de los datos hacia un sistema influxDB"`
+    Origen string `help:"URL del sistema EATON"`
+    UsuarioOrigen string `help:"Usuario para acceder al sistema EATON"`
+    PasswordOrigen string `help:"Password para acceder al sistema EATON"`
+}
+
+func NewGaby() *Gaby {
+    return &Gaby{
+        Envio: false,
+        Origen: "10.10.20.25", 
+        UsuarioOrigen: "EATON",
+        PasswordOrigen: "admin",
+    }
+}
+
+func (cfg *Gaby) Run() error {
+    // Asumimos que si bien pueden haber múltiples origenes de datos, solo hay un destino
+    Token := os.Getenv("GABY_TOKEN")
+    Bucket := os.Getenv("GABY_BUCKET")
+    Endpoint := os.Getenv("GABY_ENDPOINT")
+    Organization := os.Getenv("GABY_ORGANIZACION")
+    
+    // Supongo que también podrían parametrizarse 
+    zonaHoraria := "America/El_Salvador"
+    ficheroTemporal := "/var/lib/gaby"
+    
+    // Esta no puede cambiarse, depende es como parseamos la fecha del sistema EATON
+    timeLayout := "01/02/2006 15:04:05"
+    // Tampoco, porque es parte del sistema
+    URI_HISTORIAL := "PageHislog.html"
+    
+    URL_ORIGEN_DATOS := fmt.Sprintf("http://%s:%s@%s", cfg.UsuarioOrigen, cfg.PasswordOrigen, cfg.Origen)
+
+    // De la página inicial, obtenemos el enlace a los datos 
+    enlace, err := peticiones.ObtenerEnlaceHistorial(URL_ORIGEN_DATOS, URI_HISTORIAL)
+    if err != nil {
+        return err
+    }
+   
+    // Buscamos el último dato en la página de datos
+    var resultado []string
+    resultado, err = peticiones.ObtenerDatosAmbientales(URL_ORIGEN_DATOS, enlace)
+    if err != nil {
+        return err
+    }
+    
+    mensaje := fmt.Sprintf(`Fecha: %s - Hora: %s
+    Temperatura: %s - %s
+    Humedad: %s - %s`, resultado[0], resultado[1], resultado[2], resultado[3], resultado[4], resultado[5])  
+    fmt.Println(mensaje)
+   
+    /* Esto se correponde con el envio de datos a influxDB*/
+    if cfg.Envio {
+        config := utils.Configuracion{Endpoint, Token, Organization, Bucket}
+        datos := utils.NewDatos(resultado)
+        
+        horaActual := utils.ParsearHora(zonaHoraria, timeLayout, datos) 
+        horaAnterior := utils.LeerFechaEnArchivo(ficheroTemporal)
+        
+           
+        for i := 0; i < 10; i++ {
+            if horaActual.UnixMilli() > horaAnterior {
+                err = utils.EnviarDatos(config, datos, cfg.Origen)
+                if err != nil {
+                    return err
+                }
+                // TODO: Trabajar en este mensaje
+                fmt.Print("Enviado ")
+                fmt.Println(resultado)
+                utils.GuardarFechaEnArchivo(ficheroTemporal, horaActual)
+                return nil
+            } else {
+                fmt.Println("Todavía no se puede guardar")
+                time.Sleep(1 * time.Second)
+            }
+        }
+    }
+
+    return nil
+}
 
 //Tenés la fecha del sistema y del nodo. La fecha del nodo es la que vamos a guardar para comparar
 // pero la que vamos a enviar al sistema es la del sistema, que debería ser más actual
 // Ambas tienen que ser redondeadas
 
 func main() {
-    zonaHoraria := "America/El_Salvador"
-    timeLayout := "01/02/2006 15:04:05"
-    ficheroTemporal := "/var/lib/gaby"
-
-    hostname := "10.0.0.9"
-   
-    URL_ORIGEN_DATOS := os.Getenv("URL_ORIGEN_DATOS")
-    URI_HISTORIAL := "PageHislog.html"
-    Endpoint := os.Getenv("GABY_ENDPOINT")
-    Token := os.Getenv("GABY_TOKEN")
-    Organization := os.Getenv("GABY_ORGANIZACION")
-    Bucket := os.Getenv("GABY_BUCKET")
-   
-    enlaceDatos, err := peticiones.ObtenerEnlaceHistorial(URL_ORIGEN_DATOS, URI_HISTORIAL)
-    if err != nil {
+    err := commandeer.Run(NewGaby())
+    if err !=nil {
         fmt.Println(err)
-        return
-    }
-    
-    var resultado []string
-    resultado, err = peticiones.ObtenerDatosAmbientales(URL_ORIGEN_DATOS, enlaceDatos)
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
-    
-    datos := utils.NewDatos(resultado)
-    fmt.Println(resultado)
-    config := utils.Configuracion{Endpoint, Token, Organization, Bucket}
-    
-    horaActual := utils.ParsearHora(zonaHoraria, timeLayout, datos) 
-    horaAnterior := utils.LeerFechaEnArchivo(ficheroTemporal)
-    
-    utils.EnviarDatos(config, datos, hostname)
-       
-    for i := 0; i < 10; i++ {
-        if horaActual.UnixMilli() >  horaAnterior {
-            utils.GuardarFechaEnArchivo(ficheroTemporal, horaActual)
-        } else {
-            fmt.Println("Todavía no se puede guardar")
-            time.Sleep(1 * time.Second)
-        }
+        os.Exit(1)
     }
 }
