@@ -6,9 +6,11 @@ import (
     "context"
     "strconv" 
     "github.com/influxdata/influxdb-client-go/v2"
+    
+    "sanidad/alortiz/gaby/peticiones"
 )
 
-type Configuracion struct {
+type Acceso struct {
     Endpoint string
     Token string
     Organization string
@@ -16,8 +18,7 @@ type Configuracion struct {
 }
 
 type Datos struct {
-    Fecha string
-    Hora string
+    Timestamp time.Time
     Temperatura []float64
     Humedad []float64
 }
@@ -33,9 +34,16 @@ func conversor(lista []string, indice int) float64 {
     return 0.0
 }
 
-func NewDatos(resultado []string) Datos {
+func NewDatos(resultado []string) (Datos, error) {
+    // Procesamos la marca de tiempo
+    timeLayout := "01/02/2006 15:04:05"
     Fecha := resultado[0] 
     Hora :=  resultado[1]
+    estampa := fmt.Sprintf("%s %s", Fecha, Hora)
+    Timestamp, err := ParsearMarcaTiempo(timeLayout, estampa)
+    if err != nil {
+        return Datos{}, err
+    }
     
     temp1 := conversor(resultado, 2) 
     temp2 := conversor(resultado, 3) 
@@ -44,18 +52,37 @@ func NewDatos(resultado []string) Datos {
     
     Temperatura := []float64{temp1, temp2}
     Humedad := []float64{hum1, hum2}
-    datos := Datos{Fecha, Hora, Temperatura, Humedad}
+    datos := Datos{Timestamp, Temperatura, Humedad}
 
-    return datos
+    return datos, nil
 }
 
 func (d *Datos) String() string {
-    return fmt.Sprintf(`Fecha: %s - Hora: %s
+    timeLayout := "01/02/2006 15:04:05"
+    fecha := d.Timestamp.Format(timeLayout)
+    return fmt.Sprintf(`Fecha: %s 
     Temperatura: %.2f - %.2f
-    Humedad: %.2f - %.2f`, d.Fecha, d.Hora, d.Temperatura[0], d.Temperatura[1], d.Humedad[0], d.Humedad[1])  
+    Humedad: %.2f - %.2f`, fecha, d.Temperatura[0], d.Temperatura[1], d.Humedad[0], d.Humedad[1])  
 }
 
-func EnviarDatos(config Configuracion, datos Datos, hostname string) error {
+func ObtenerDatos(url_origen string, uri_historial string) (Datos, error) {
+    // De la página inicial, obtenemos el enlace a los datos 
+    enlace, err := peticiones.ObtenerEnlaceHistorial(url_origen, uri_historial)
+    if err != nil {
+        return Datos{}, err
+    }
+   
+    // Buscamos el último dato en la página de datos
+    var resultado []string
+    resultado, err = peticiones.ObtenerDatosAmbientales(url_origen, enlace)
+    if err != nil {
+        return Datos{}, err
+    }
+
+    return NewDatos(resultado)
+}
+
+func EnviarDatos(config Acceso, datos Datos, hostname string) error {
 
     client := influxdb2.NewClient(config.Endpoint, config.Token)
     defer client.Close()

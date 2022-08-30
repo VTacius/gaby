@@ -8,31 +8,33 @@ import (
     "strconv"
 )
 
-func ParsearHora(timezone string, layout string, datos Datos) (time.Time) {
-    marcaTemporal := fmt.Sprintf("%s %s", datos.Fecha, datos.Hora)
-    
-    localidad, _ := time.LoadLocation(timezone)
-    tiempo, _ := time.ParseInLocation(layout, marcaTemporal, localidad) 
-    
-    return tiempo
+func ParsearMarcaTiempo(layout string, estampa string) (time.Time, error) {
+
+    localidad, err := time.LoadLocation("Local")
+    if err != nil {
+        return time.Time{}, err
+    }
+
+    tiempo, errorParse := time.ParseInLocation(layout, estampa, localidad)
+
+    return tiempo, errorParse
 }
 
-func GuardarFechaEnArchivo(ruta string, ts time.Time){
+func GuardarFechaEnArchivo(ruta string, ts time.Time) (error){
     redondo := ts.Round(time.Second * 60)
     datos := []byte(fmt.Sprintf("%d", redondo.UnixMilli()))
     err := os.WriteFile(ruta, datos, 0700)
-    // TODO: De verdad necesitas manejar mejor el comportamiento frente a este error
-    if err != nil {
-        fmt.Println(err)
-    }
+    return err
 }
 
-func LeerFechaEnArchivo(ruta string) (int64) {
-    // TODO: ¡El manejo de errores! 
-    datos, _ := os.ReadFile(ruta)
+func LeerFechaEnArchivo(ruta string) (int64, error) {
+    datos, err := os.ReadFile(ruta)
+    if err != nil {
+        return 0, err
+    }
     contenido := strings.Trim(string(datos), "\n")
-    entero, _ := strconv.ParseInt(contenido, 10, 64)
+    entero, err := strconv.ParseInt(contenido, 10, 64)
     
-    return entero
+    return entero, err
 }
 

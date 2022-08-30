@@ -22,8 +22,11 @@ scp gaby root@servidor:/usr/local/sbin
 
 ## Configuracion
 ```bash
-### Crear el fichero para guardar la hora
-echo 1600000000000 > /var/lib/gaby
+### Creamos el directorio para guardar el último envio
+mkdir /var/lib/gaby
+
+### Crear los ficheros para guardar la hora. Necesitamos uno por cada sensor que tengamos
+echo 1600000000000 > /var/lib/gaby/10.10.20.21
 
 ### Configurar las variables del sistema en el archivo correspondiente:
 cat <<MAFI >/etc/default/gaby
@@ -46,13 +49,12 @@ gaby --origen 10.10.20.21 --password-origen admin --usuario-origen EATON --envio
 ```
 ### Como una tarea mediante systemd
 ```bash
-# Se hace uno de estos archivos para cada sensor que se quiera agregar
-cat <<MAFI> /lib/systemd/system/gaby@10.0.0.97.service 
+# El siguiente es un template cuya variable es la IP del sensor EATON destino
+cat <<MAFI> /lib/systemd/system/gaby@.service 
 [Unit]
 Description=Gaby: Scrapper para dispositivo EATON
 
 [Service]
-Type=oneshot
 EnvironmentFile=/etc/default/gaby
 ExecStart=/usr/local/sbin/gaby --origen %i --password-origen admin --usuario-origen EATON --envio
 
@@ -61,14 +63,15 @@ WantedBy=multi-user.target
 Also=gaby.timer
 MAFI
 
+# Un target nos permite llamar a varios servicios
 cat <<MAFI> /lib/systemd/system/gaby.target 
 [Unit]
-Description=Target para los servicios de Gaby 
-Wants=gaby@10.0.0.97.service
-After=gaby@10.0.0.97.service
+Description=Target para los servicios de Gaby
+BindsTo=gaby@10.0.0.97.service gaby@10.0.0.98.service
+After=gaby@10.0.0.97.service gaby@10.0.0.98.service
 
 [Install]
-Also=gaby.timer
+WantedBy=timers.target
 MAFI
 
 cat <<MAFI> /lib/systemd/system/gaby.timer 
@@ -76,8 +79,8 @@ cat <<MAFI> /lib/systemd/system/gaby.timer
 Description=Corre el Scrapper Eaton cada minuto
 
 [Timer]
-Unit=gaby.target
 OnCalendar=*-*-* *:*:00
+Unit=gaby.target
 
 [Install]
 WantedBy=timers.target
