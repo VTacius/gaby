@@ -55,30 +55,26 @@ func (cfg *Gaby) Run() error {
     if err != nil {
         return err
     }
+    datos := utils.NewDatos(resultado)
     
-    mensaje := fmt.Sprintf(`Fecha: %s - Hora: %s
-    Temperatura: %s - %s
-    Humedad: %s - %s`, resultado[0], resultado[1], resultado[2], resultado[3], resultado[4], resultado[5])  
-    fmt.Println(mensaje)
+    fmt.Println(datos.String())
    
     /* Esto se correponde con el envio de datos a influxDB*/
     if cfg.Envio {
         config := utils.Configuracion{Endpoint, Token, Organization, Bucket}
-        datos := utils.NewDatos(resultado)
         
         horaActual := utils.ParsearHora(zonaHoraria, timeLayout, datos) 
         horaAnterior := utils.LeerFechaEnArchivo(ficheroTemporal)
         
-           
+        // TODO: Creo que esto no esta funcionando como se supone que debe hacerlo 
         for i := 0; i < 10; i++ {
             if horaActual.UnixMilli() > horaAnterior {
                 err = utils.EnviarDatos(config, datos, cfg.Origen)
                 if err != nil {
                     return err
                 }
-                // TODO: Trabajar en este mensaje
-                fmt.Print("Enviado ")
-                fmt.Println(resultado)
+                fmt.Println(fmt.Sprintf("Enviado %+v", datos))
+                // TODO: Trabajar en como debe manejarse este error
                 utils.GuardarFechaEnArchivo(ficheroTemporal, horaActual)
                 return nil
             } else {

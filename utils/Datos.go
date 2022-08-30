@@ -1,6 +1,7 @@
 package utils
 
 import (
+    "fmt"
     "time"
     "context"
     "strconv" 
@@ -26,10 +27,10 @@ func conversor(lista []string, indice int) float64 {
         if resultado, err := strconv.ParseFloat(lista[indice], 64); err == nil {
             return resultado
         }
-        return 2.0
+        return 0.0
     }
 
-    return 1.0
+    return 0.0
 }
 
 func NewDatos(resultado []string) Datos {
@@ -48,6 +49,12 @@ func NewDatos(resultado []string) Datos {
     return datos
 }
 
+func (d *Datos) String() string {
+    return fmt.Sprintf(`Fecha: %s - Hora: %s
+    Temperatura: %.2f - %.2f
+    Humedad: %.2f - %.2f`, d.Fecha, d.Hora, d.Temperatura[0], d.Temperatura[1], d.Humedad[0], d.Humedad[1])  
+}
+
 func EnviarDatos(config Configuracion, datos Datos, hostname string) error {
 
     client := influxdb2.NewClient(config.Endpoint, config.Token)
@@ -55,18 +62,19 @@ func EnviarDatos(config Configuracion, datos Datos, hostname string) error {
     
     writeAPI := client.WriteAPIBlocking(config.Organization, config.Bucket)
 
+    marcaTiempo := time.Now().Round(time.Second * 60)
     // Create point using fluent style
     temperatura := influxdb2.NewPointWithMeasurement("temperatura").
         AddTag("host", hostname).
         AddField("temp1", datos.Temperatura[0]).
         AddField("temp2", datos.Temperatura[1]).
-        SetTime(time.Now().Round(time.Second * 60))
+        SetTime(marcaTiempo)
     
     humedad := influxdb2.NewPointWithMeasurement("humedad").
         AddTag("host", hostname).
         AddField("hum1", datos.Humedad[0]).
         AddField("hum2", datos.Humedad[1]).
-        SetTime(time.Now().Round(time.Second * 60))
+        SetTime(marcaTiempo)
     
     err := writeAPI.WritePoint(context.Background(), temperatura)
     if err != nil {
