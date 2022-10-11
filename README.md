@@ -1,39 +1,38 @@
 # gaby
 Scrapper de los datos de sensores EATON Powerware
 
-## Construcción
-La versión de Go a usar es la 1.18.
-
-Por conveniencia, la construcción del binario debe hacerse en un sistema independiente al servidor en producción. Para construirlo, basta con ejecutar el siguiente comando desde el directorio
-
-```bash
-go build .
+## Escogiendo la versión
+Los paquetes se encuentran en [la página de lanzamientos](https://github.com/VTacius/gaby/releases/latest). Por ahora, solo hay paquetes para el último lanzamiento de Debian, y de ellos, debe escoger la versión para su sistema según el esquema de versionado:
+``` 
+gaby-{version-aplicativo}-{version-debian}.tgz 
 ```
 
-Si lo prefiere, puede usarse podman (o docker) para tal tarea
-```bash
-podman run  -it  --rm -v "$PWD":/go/src/myapp -w /go/src/myapp golang:1.18-bullseye go build .
+Así por ejemplo, para la versión 
 ```
+gaby-v0.9.5-11.4.tgz 
+```
+
+Significa que es la versión `v0.9.5` de la aplicación para la versión `11.4` de Debian
 
 ## Instalación
-El binario se envía al servidor destino. Por ejemplo, con ```scp```
+Una vez el paquete esté en el servidor, de descomprime:
 ```bash
-scp gaby root@servidor:/usr/local/sbin
+tar xzvf gaby-v0.9.5-11.5.tgz
 ```
+
+Se entra al directorio resultante
+```bash
+cd gaby/
+```
+
+Y se ejecuta el instalador
+```bash
+bash instalador.sh 
+```
+
 
 ## Configuracion
-```bash
-### Creamos el directorio para guardar el último envio
-mkdir /var/lib/gaby
-
-### Tenemos un fichero de configuración de tipo YAML para guardar las credenciales de acceso al backend InfluxDB2:
-cat <<MAFI >/etc/gaby.yaml
-destino: http://stats.sanidad.gob.sv:8086
-destino-token: 2-qbR-mdKDF6f9qO-QW-UftFSeuGnXUoc_R2W_UKEw6mC1mbndISAbnKyw40dCdgaQtfQH2dYFHlRtV0gWpHgA==
-destino-organizacion: sanidad
-destino-bucket: ambientales
-MAFI
-```
+El fichero en `/etc/gaby.yaml` debería ser descriptivo sobre los datos requeridos
 
 ## Uso
 ### Desde consola

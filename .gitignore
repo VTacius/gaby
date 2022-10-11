@@ -15,5 +15,6 @@
 # vendor/
 gaby
 parametros
+output/
 *.swp
 *.swo
